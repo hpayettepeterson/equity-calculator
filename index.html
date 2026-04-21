@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equity equivalence calculator</title>
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4ef;
+    --text-primary: #1a1a1a;
+    --text-secondary: #6b6a64;
+    --border-tertiary: rgba(0,0,0,0.12);
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #1a1a1a;
+      --bg-secondary: #2a2a2a;
+      --text-primary: #f5f4ef;
+      --text-secondary: #a8a7a0;
+      --border-tertiary: rgba(255,255,255,0.12);
+    }
+  }
+  body {
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    line-height: 1.7;
+    font-size: 16px;
+  }
+  h1 { font-size: 22px; font-weight: 500; margin: 0 0 0.5rem; }
+  p.intro { color: var(--text-secondary); font-size: 14px; margin: 0 0 2rem; }
+  button {
+    cursor: pointer;
+    font-family: inherit;
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border-tertiary);
+    border-radius: 2px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--text-primary);
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--text-primary);
+    cursor: pointer;
+    border: none;
+  }
+</style>
+</head>
+<body>
+
+<h1>Equity equivalence calculator</h1>
+<p class="intro">Comparing dilutable equity stakes against anti-dilution-protected stakes across funding rounds.</p>
+
+<div style="display: flex; gap: 4px; margin-bottom: 1.5rem; padding: 4px; background: var(--bg-secondary); border-radius: var(--border-radius-md); width: fit-content;">
+  <button id="view-compare" style="padding: 6px 14px; font-size: 13px; border: none; background: var(--bg-primary); border-radius: var(--border-radius-md); font-weight: 500;">Side-by-side comparison</button>
+  <button id="view-breakeven" style="padding: 6px 14px; font-size: 13px; border: none; background: transparent; border-radius: var(--border-radius-md); color: var(--text-secondary);">Breakeven cap</button>
+</div>
+
+<div id="view-compare-panel">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+    <div>
+      <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Dilutable stake (%)</label>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <input type="range" id="dilutable" min="5" max="25" value="15" step="0.5" style="flex: 1;" />
+        <span id="dilutable-out" style="font-size: 14px; font-weight: 500; min-width: 36px; text-align: right;">15</span>
+      </div>
+    </div>
+    <div>
+      <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Protected stake (%)</label>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <input type="range" id="protected" min="1" max="15" value="5" step="0.5" style="flex: 1;" />
+        <span id="protected-out" style="font-size: 14px; font-weight: 500; min-width: 36px; text-align: right;">5</span>
+      </div>
+    </div>
+    <div>
+      <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Protection cap (€M postmoney)</label>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <input type="range" id="cap" min="5" max="200" value="10" step="5" style="flex: 1;" />
+        <span id="cap-out" style="font-size: 14px; font-weight: 500; min-width: 36px; text-align: right;">10</span>
+      </div>
+    </div>
+    <div>
+      <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Dilution per round (%)</label>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <input type="range" id="dilution" min="10" max="30" value="20" step="1" style="flex: 1;" />
+        <span id="dilution-out" style="font-size: 14px; font-weight: 500; min-width: 36px; text-align: right;">20</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem;">
+    <div style="background: var(--bg-secondary); border-radius: var(--border-radius-md); padding: 14px;">
+      <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">At €50M exit</div>
+      <div style="font-size: 13px; color: var(--text-secondary);">Dilutable: <span id="m50-d" style="color: var(--text-primary); font-weight: 500;">—</span></div>
+      <div style="font-size: 13px; color: var(--text-secondary);">Protected: <span id="m50-p" style="color: var(--text-primary); font-weight: 500;">—</span></div>
+    </div>
+    <div style="background: var(--bg-secondary); border-radius: var(--border-radius-md); padding: 14px;">
+      <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">At €200M exit</div>
+      <div style="font-size: 13px; color: var(--text-secondary);">Dilutable: <span id="m200-d" style="color: var(--text-primary); font-weight: 500;">—</span></div>
+      <div style="font-size: 13px; color: var(--text-secondary);">Protected: <span id="m200-p" style="color: var(--text-primary); font-weight: 500;">—</span></div>
+    </div>
+    <div style="background: var(--bg-secondary); border-radius: var(--border-radius-md); padding: 14px;">
+      <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">At €1B exit</div>
+      <div style="font-size: 13px; color: var(--text-secondary);">Dilutable: <span id="m1000-d" style="color: var(--text-primary); font-weight: 500;">—</span></div>
+      <div style="font-size: 13px; color: var(--text-secondary);">Protected: <span id="m1000-p" style="color: var(--text-primary); font-weight: 500;">—</span></div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 8px; font-size: 12px; color: var(--text-secondary);">
+    <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 3px; background: #378ADD;"></span>Dilutable stake (e.g. 15%)</span>
+    <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 3px; background: #D85A30; border-top: 1px dashed #D85A30;"></span>Protected stake (e.g. 5% up to €10M cap)</span>
+  </div>
+
+  <div style="position: relative; width: 100%; height: 320px;">
+    <canvas id="compare-chart"></canvas>
+  </div>
+</div>
+
+<div id="view-breakeven-panel" style="display: none;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+    <div>
+      <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Dilutable target (%)</label>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <input type="range" id="be-dilutable" min="5" max="25" value="15" step="0.5" style="flex: 1;" />
+        <span id="be-dilutable-out" style="font-size: 14px; font-weight: 500; min-width: 36px; text-align: right;">15</span>
+      </div>
+    </div>
+    <div>
+      <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Protected stake (%)</label>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <input type="range" id="be-protected" min="1" max="15" value="5" step="0.5" style="flex: 1;" />
+        <span id="be-protected-out" style="font-size: 14px; font-weight: 500; min-width: 36px; text-align: right;">5</span>
+      </div>
+    </div>
+    <div>
+      <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Dilution per round (%)</label>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <input type="range" id="be-dilution" min="10" max="30" value="20" step="1" style="flex: 1;" />
+        <span id="be-dilution-out" style="font-size: 14px; font-weight: 500; min-width: 36px; text-align: right;">20</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="background: var(--bg-secondary); border-radius: var(--border-radius-md); padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 6px;">Required protection cap to match dilutable target at a €500M exit</div>
+    <div style="font-size: 24px; font-weight: 500;" id="be-result">—</div>
+    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;" id="be-ratio">—</div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 8px; font-size: 12px; color: var(--text-secondary);">
+    <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 3px; background: #0F6E56;"></span>Required protection cap (€M postmoney)</span>
+  </div>
+
+  <div style="position: relative; width: 100%; height: 320px;">
+    <canvas id="breakeven-chart"></canvas>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(function() {
+  var BLUE = '#378ADD';
+  var CORAL = '#D85A30';
+  var TEAL = '#0F6E56';
+  var GRID = 'rgba(128,128,128,0.15)';
+
+  var VALUATIONS = [5, 15, 40, 100, 250, 600, 1500, 3500];
+
+  function simulate(initialStake, capMillion, dilutionPct, exitValuation) {
+    var stake = initialStake / 100;
+    var dilutionFactor = 1 - (dilutionPct / 100);
+    for (var i = 0; i < VALUATIONS.length; i++) {
+      var roundVal = VALUATIONS[i];
+      if (roundVal > exitValuation) break;
+      if (capMillion === null) {
+        stake = stake * dilutionFactor;
+      } else {
+        if (roundVal > capMillion) {
+          stake = stake * dilutionFactor;
+        }
+      }
+    }
+    return stake * 100;
+  }
+
+  function buildData(dilutable, protectedPct, cap, dilution) {
+    var exits = [];
+    for (var v = 10; v <= 2000; v += 10) exits.push(v);
+    var dilSeries = exits.map(function(v) { return simulate(dilutable, null, dilution, v); });
+    var protSeries = exits.map(function(v) { return simulate(protectedPct, cap, dilution, v); });
+    return { exits: exits, dilSeries: dilSeries, protSeries: protSeries };
+  }
+
+  function findBreakevenCap(dilutable, protectedPct, dilution, exitValuation) {
+    var target = simulate(dilutable, null, dilution, exitValuation);
+    var bestCap = null;
+    for (var cap = 10; cap <= 10000; cap += 10) {
+      var pFinal = simulate(protectedPct, cap, dilution, exitValuation);
+      if (pFinal >= target) {
+        bestCap = cap;
+        break;
+      }
+    }
+    return bestCap;
+  }
+
+  var controls = ['dilutable', 'protected', 'cap', 'dilution'];
+  var outputs = {};
+  controls.forEach(function(id) {
+    outputs[id] = document.getElementById(id + '-out');
+  });
+
+  var beControls = ['be-dilutable', 'be-protected', 'be-dilution'];
+  var beOutputs = {};
+  beControls.forEach(function(id) {
+    beOutputs[id] = document.getElementById(id + '-out');
+  });
+
+  var compareChart, breakevenChart;
+
+  function updateCompare() {
+    var d = parseFloat(document.getElementById('dilutable').value);
+    var p = parseFloat(document.getElementById('protected').value);
+    var c = parseFloat(document.getElementById('cap').value);
+    var di = parseFloat(document.getElementById('dilution').value);
+    outputs['dilutable'].textContent = d;
+    outputs['protected'].textContent = p;
+    outputs['cap'].textContent = c;
+    outputs['dilution'].textContent = di;
+
+    var data = buildData(d, p, c, di);
+
+    var exits = [50, 200, 1000];
+    exits.forEach(function(v) {
+      var dVal = simulate(d, null, di, v);
+      var pVal = simulate(p, c, di, v);
+      document.getElementById('m' + v + '-d').textContent = dVal.toFixed(2) + '%';
+      document.getElementById('m' + v + '-p').textContent = pVal.toFixed(2) + '%';
+    });
+
+    if (compareChart) {
+      compareChart.data.datasets[0].data = data.dilSeries.map(function(y, i) { return { x: data.exits[i], y: y }; });
+      compareChart.data.datasets[1].data = data.protSeries.map(function(y, i) { return { x: data.exits[i], y: y }; });
+      compareChart.update('none');
+    }
+  }
+
+  function updateBreakeven() {
+    var d = parseFloat(document.getElementById('be-dilutable').value);
+    var p = parseFloat(document.getElementById('be-protected').value);
+    var di = parseFloat(document.getElementById('be-dilution').value);
+    beOutputs['be-dilutable'].textContent = d;
+    beOutputs['be-protected'].textContent = p;
+    beOutputs['be-dilution'].textContent = di;
+
+    var capAt500 = findBreakevenCap(d, p, di, 500);
+    var resultEl = document.getElementById('be-result');
+    var ratioEl = document.getElementById('be-ratio');
+    if (capAt500 === null || capAt500 > 9000) {
+      resultEl.textContent = 'No cap is sufficient';
+      ratioEl.textContent = p + '% cannot match ' + d + '% at this exit size under any realistic protection cap';
+    } else {
+      resultEl.textContent = '€' + capAt500.toLocaleString() + 'M';
+      var ratio = (capAt500 / 10);
+      ratioEl.textContent = 'That is ' + Math.round(ratio) + 'x larger than the €10M cap typical of some US-based spinout terms';
+    }
+
+    var exits = [];
+    var caps = [];
+    for (var v = 50; v <= 2000; v += 50) {
+      exits.push(v);
+      var c = findBreakevenCap(d, p, di, v);
+      caps.push(c === null || c > 9000 ? null : c);
+    }
+
+    if (breakevenChart) {
+      breakevenChart.data.datasets[0].data = caps.map(function(y, i) { return { x: exits[i], y: y }; });
+      breakevenChart.update('none');
+    }
+  }
+
+  controls.forEach(function(id) {
+    document.getElementById(id).addEventListener('input', updateCompare);
+  });
+  beControls.forEach(function(id) {
+    document.getElementById(id).addEventListener('input', updateBreakeven);
+  });
+
+  var btnCompare = document.getElementById('view-compare');
+  var btnBreakeven = document.getElementById('view-breakeven');
+  var panelCompare = document.getElementById('view-compare-panel');
+  var panelBreakeven = document.getElementById('view-breakeven-panel');
+
+  btnCompare.addEventListener('click', function() {
+    panelCompare.style.display = 'block';
+    panelBreakeven.style.display = 'none';
+    btnCompare.style.background = 'var(--bg-primary)';
+    btnCompare.style.color = 'var(--text-primary)';
+    btnBreakeven.style.background = 'transparent';
+    btnBreakeven.style.color = 'var(--text-secondary)';
+  });
+  btnBreakeven.addEventListener('click', function() {
+    panelCompare.style.display = 'none';
+    panelBreakeven.style.display = 'block';
+    btnBreakeven.style.background = 'var(--bg-primary)';
+    btnBreakeven.style.color = 'var(--text-primary)';
+    btnCompare.style.background = 'transparent';
+    btnCompare.style.color = 'var(--text-secondary)';
+    if (!breakevenChart) initBreakeven();
+    updateBreakeven();
+  });
+
+  function initCompare() {
+    var ctx = document.getElementById('compare-chart').getContext('2d');
+    compareChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: [
+          { label: 'Dilutable', data: [], borderColor: BLUE, backgroundColor: BLUE, borderWidth: 2, pointRadius: 0, tension: 0.1 },
+          { label: 'Protected', data: [], borderColor: CORAL, backgroundColor: CORAL, borderWidth: 2, borderDash: [6, 4], pointRadius: 0, tension: 0.1 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            type: 'linear',
+            title: { display: true, text: 'Exit valuation (€M)', font: { size: 12 } },
+            min: 10, max: 2000,
+            grid: { color: GRID },
+            ticks: { callback: function(v) { return v >= 1000 ? '€' + (v / 1000) + 'B' : '€' + v + 'M'; } }
+          },
+          y: {
+            title: { display: true, text: 'Effective final stake (%)', font: { size: 12 } },
+            min: 0,
+            grid: { color: GRID },
+            ticks: { callback: function(v) { return v.toFixed(1) + '%'; } }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: function(items) {
+                var v = items[0].parsed.x;
+                return v >= 1000 ? 'Exit: €' + (v / 1000).toFixed(1) + 'B' : 'Exit: €' + v + 'M';
+              },
+              label: function(item) { return item.dataset.label + ': ' + item.parsed.y.toFixed(2) + '%'; }
+            }
+          }
+        }
+      }
+    });
+    updateCompare();
+  }
+
+  function initBreakeven() {
+    var ctx = document.getElementById('breakeven-chart').getContext('2d');
+    breakevenChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: [
+          { label: 'Required cap', data: [], borderColor: TEAL, backgroundColor: TEAL, borderWidth: 2, pointRadius: 0, tension: 0.1 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            type: 'linear',
+            title: { display: true, text: 'Exit valuation (€M)', font: { size: 12 } },
+            min: 50, max: 2000,
+            grid: { color: GRID },
+            ticks: { callback: function(v) { return v >= 1000 ? '€' + (v / 1000) + 'B' : '€' + v + 'M'; } }
+          },
+          y: {
+            title: { display: true, text: 'Required protection cap (€M)', font: { size: 12 } },
+            min: 0,
+            grid: { color: GRID },
+            ticks: { callback: function(v) { return v >= 1000 ? '€' + (v / 1000) + 'B' : '€' + v + 'M'; } }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: function(items) {
+                var v = items[0].parsed.x;
+                return v >= 1000 ? 'Exit: €' + (v / 1000).toFixed(1) + 'B' : 'Exit: €' + v + 'M';
+              },
+              label: function(item) {
+                var v = item.parsed.y;
+                if (v === null) return 'No feasible cap';
+                return 'Required cap: €' + Math.round(v) + 'M';
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  initCompare();
+})();
+</script>
+
+</body>
+</html>
