@@ -70,6 +70,14 @@
 <h1>Equity equivalence calculator</h1>
 <p class="intro">Comparing dilutable equity stakes against anti-dilution-protected stakes across funding rounds.</p>
 
+<details style="margin-bottom: 1.5rem; font-size: 13px; color: var(--text-secondary); background: var(--bg-secondary); border-radius: var(--border-radius-md); padding: 10px 14px;">
+  <summary style="cursor: pointer; font-weight: 500; color: var(--text-primary);">About the US comparison</summary>
+  <div style="margin-top: 10px; line-height: 1.6;">
+    <p style="margin: 0 0 8px;">US university spinout terms vary widely. Many deals take a straight 5% (or less) dilutable stake with no protection at all. Only some include an anti-dilution protection cap, and when they do, the cap is typically in the €2–15M range, with €20M at the extreme.</p>
+    <p style="margin: 0;">The "5% non-dilutable up to €10M" framing that sometimes appears in policy documents as the US standard is therefore one specific example structure, not necessarily the default. This tool lets you compare it against a dilutable stake to see how the two actually behave across exit sizes.</p>
+  </div>
+</details>
+
 <div style="display: flex; gap: 4px; margin-bottom: 1.5rem; padding: 4px; background: var(--bg-secondary); border-radius: var(--border-radius-md); width: fit-content;">
   <button id="view-compare" style="padding: 6px 14px; font-size: 13px; border: none; background: var(--bg-primary); border-radius: var(--border-radius-md); font-weight: 500;">Side-by-side comparison</button>
   <button id="view-breakeven" style="padding: 6px 14px; font-size: 13px; border: none; background: transparent; border-radius: var(--border-radius-md); color: var(--text-secondary);">Breakeven cap</button>
@@ -94,9 +102,10 @@
     <div>
       <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Protection cap (€M postmoney)</label>
       <div style="display: flex; align-items: center; gap: 10px;">
-        <input type="range" id="cap" min="5" max="200" value="10" step="5" style="flex: 1;" />
-        <span id="cap-out" style="font-size: 14px; font-weight: 500; min-width: 36px; text-align: right;">10</span>
+        <input type="range" id="cap" min="5" max="2000" value="10" step="5" style="flex: 1;" />
+        <span id="cap-out" style="font-size: 14px; font-weight: 500; min-width: 44px; text-align: right;">10</span>
       </div>
+      <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">Real US deals: €2–15M typical, €20M at the extreme. Slider extends beyond this range to show the cap levels actually required for equivalence.</div>
     </div>
     <div>
       <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Dilution per round (%)</label>
@@ -281,7 +290,7 @@
     } else {
       resultEl.textContent = '€' + capAt500.toLocaleString() + 'M';
       var ratio = (capAt500 / 10);
-      ratioEl.textContent = 'That is ' + Math.round(ratio) + 'x larger than the €10M cap typical of some US-based spinout terms';
+      ratioEl.textContent = 'That is ' + Math.round(ratio) + 'x larger than the €10M cap commonly cited as the ceiling on US-style protection (real US deals: €2–15M typical, €20M at the extreme).';
     }
 
     var exits = [];
