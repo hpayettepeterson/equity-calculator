@@ -175,13 +175,6 @@
     <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;" id="be-ratio">—</div>
   </div>
 
-  <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 8px; font-size: 12px; color: var(--text-secondary);">
-    <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 3px; background: #0F6E56;"></span>Required protection cap (€M postmoney)</span>
-  </div>
-
-  <div style="position: relative; width: 100%; height: 320px;">
-    <canvas id="breakeven-chart"></canvas>
-  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -244,7 +237,7 @@
     beOutputs[id] = document.getElementById(id + '-out');
   });
 
-  var compareChart, breakevenChart;
+  var compareChart;
 
   function updateCompare() {
     var d = parseFloat(document.getElementById('dilutable').value);
@@ -293,18 +286,6 @@
       ratioEl.textContent = 'That is ' + Math.round(ratio) + 'x larger than the €10M cap commonly cited as the ceiling on US-style protection (real US deals: €2–15M typical, €20M at the extreme).';
     }
 
-    var exits = [];
-    var caps = [];
-    for (var v = 50; v <= 2000; v += 50) {
-      exits.push(v);
-      var c = findBreakevenCap(d, p, di, v);
-      caps.push(c === null || c > 9000 ? null : c);
-    }
-
-    if (breakevenChart) {
-      breakevenChart.data.datasets[0].data = caps.map(function(y, i) { return { x: exits[i], y: y }; });
-      breakevenChart.update('none');
-    }
   }
 
   controls.forEach(function(id) {
@@ -334,7 +315,6 @@
     btnBreakeven.style.color = 'var(--text-primary)';
     btnCompare.style.background = 'transparent';
     btnCompare.style.color = 'var(--text-secondary)';
-    if (!breakevenChart) initBreakeven();
     updateBreakeven();
   });
 
@@ -381,53 +361,6 @@
       }
     });
     updateCompare();
-  }
-
-  function initBreakeven() {
-    var ctx = document.getElementById('breakeven-chart').getContext('2d');
-    breakevenChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        datasets: [
-          { label: 'Required cap', data: [], borderColor: TEAL, backgroundColor: TEAL, borderWidth: 2, pointRadius: 0, tension: 0.1 }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: {
-            type: 'linear',
-            title: { display: true, text: 'Exit valuation (€M)', font: { size: 12 } },
-            min: 50, max: 2000,
-            grid: { color: GRID },
-            ticks: { callback: function(v) { return v >= 1000 ? '€' + (v / 1000) + 'B' : '€' + v + 'M'; } }
-          },
-          y: {
-            title: { display: true, text: 'Required protection cap (€M)', font: { size: 12 } },
-            min: 0,
-            grid: { color: GRID },
-            ticks: { callback: function(v) { return v >= 1000 ? '€' + (v / 1000) + 'B' : '€' + v + 'M'; } }
-          }
-        },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              title: function(items) {
-                var v = items[0].parsed.x;
-                return v >= 1000 ? 'Exit: €' + (v / 1000).toFixed(1) + 'B' : 'Exit: €' + v + 'M';
-              },
-              label: function(item) {
-                var v = item.parsed.y;
-                if (v === null) return 'No feasible cap';
-                return 'Required cap: €' + Math.round(v) + 'M';
-              }
-            }
-          }
-        }
-      }
-    });
   }
 
   initCompare();
