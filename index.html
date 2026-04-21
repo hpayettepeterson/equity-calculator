@@ -97,7 +97,7 @@
     <div>
       <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Protection cap (€M postmoney)</label>
       <div style="display: flex; align-items: center; gap: 10px;">
-        <input type="range" id="cap" min="5" max="2000" value="10" step="5" style="flex: 1;" />
+        <input type="range" id="cap" min="2" max="2000" value="10" step="1" style="flex: 1;" />
         <span id="cap-out" style="font-size: 14px; font-weight: 500; min-width: 44px; text-align: right;">10</span>
       </div>
       <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">Real US deals: €2–15M typical, €20M at the extreme. Slider extends beyond this range to show the cap levels actually required for equivalence.</div>
@@ -153,6 +153,9 @@
   var TEAL = '#0F6E56';
   var GRID = 'rgba(128,128,128,0.15)';
 
+  // Discrete round model. Dilution is applied once per financing round
+  // at the listed postmoney valuations. The protection cap skips
+  // dilution for any round whose postmoney is <= cap.
   var VALUATIONS = [5, 15, 40, 100, 250, 600, 1500, 3500];
 
   function simulate(initialStake, capMillion, dilutionPct, exitValuation) {
@@ -161,12 +164,8 @@
     for (var i = 0; i < VALUATIONS.length; i++) {
       var roundVal = VALUATIONS[i];
       if (roundVal > exitValuation) break;
-      if (capMillion === null) {
+      if (capMillion === null || roundVal > capMillion) {
         stake = stake * dilutionFactor;
-      } else {
-        if (roundVal > capMillion) {
-          stake = stake * dilutionFactor;
-        }
       }
     }
     return stake * 100;
@@ -180,17 +179,22 @@
     return { exits: exits, dilSeries: dilSeries, protSeries: protSeries };
   }
 
-  function findBreakevenCap(dilutable, protectedPct, dilution, exitValuation) {
-    var target = simulate(dilutable, null, dilution, exitValuation);
-    var bestCap = null;
-    for (var cap = 10; cap <= 10000; cap += 10) {
-      var pFinal = simulate(protectedPct, cap, dilution, exitValuation);
-      if (pFinal >= target) {
-        bestCap = cap;
-        break;
-      }
+  // Breakeven cap = smallest cap at which the protected stake matches
+  // or exceeds the dilutable stake at the given exit valuation.
+  // Since the simulate output changes only when the cap crosses a round
+  // valuation (it is piecewise-constant in cap with jumps at VALUATIONS),
+  // the minimum sufficient cap is exactly one of the VALUATIONS entries.
+  // Returns null if no cap <= exit valuation achieves equivalence.
+  function findBreakevenCap(dilutable, protectedPct, dilutionPct, exitValuation) {
+    if (protectedPct >= dilutable) return null;
+    var target = simulate(dilutable, null, dilutionPct, exitValuation);
+    for (var i = 0; i < VALUATIONS.length; i++) {
+      var candidateCap = VALUATIONS[i];
+      if (candidateCap > exitValuation) return null;
+      var pFinal = simulate(protectedPct, candidateCap, dilutionPct, exitValuation);
+      if (pFinal >= target - 1e-9) return candidateCap;
     }
-    return bestCap;
+    return null;
   }
 
   var controls = ['dilutable', 'protected', 'cap', 'dilution'];
@@ -230,13 +234,17 @@
     var capAt500 = findBreakevenCap(d, p, di, 500);
     var resultEl = document.getElementById('be-result');
     var ratioEl = document.getElementById('be-ratio');
-    if (capAt500 === null || capAt500 > 9000) {
+    if (p >= d) {
+      resultEl.textContent = 'No cap needed';
+      ratioEl.textContent = 'Protected stake (' + p + '%) already meets or exceeds the dilutable target (' + d + '%).';
+    } else if (capAt500 === null) {
       resultEl.textContent = 'No cap is sufficient';
-      ratioEl.textContent = p + '% cannot match ' + d + '% at a €500M exit under any realistic protection cap';
+      ratioEl.textContent = p + '% cannot match ' + d + '% at a €500M exit — the required cap would exceed the exit valuation itself.';
     } else {
-      resultEl.textContent = '€' + capAt500.toLocaleString() + 'M';
-      var ratio = (capAt500 / 10);
-      ratioEl.textContent = 'That is ' + Math.round(ratio) + 'x larger than the €10M cap commonly cited as the ceiling on US-style protection (real US deals: €2–15M typical, €20M at the extreme).';
+      var capStr = capAt500 >= 100 ? capAt500.toFixed(0) : capAt500.toFixed(1);
+      resultEl.textContent = '€' + capStr + 'M';
+      var ratio = capAt500 / 10;
+      ratioEl.textContent = 'That is ' + ratio.toFixed(1) + '× larger than the €10M cap commonly cited as the ceiling on US-style protection (real US deals: €2–15M typical, €20M at the extreme).';
     }
   }
 
