@@ -78,12 +78,7 @@
   </div>
 </details>
 
-<div style="display: flex; gap: 4px; margin-bottom: 1.5rem; padding: 4px; background: var(--bg-secondary); border-radius: var(--border-radius-md); width: fit-content;">
-  <button id="view-compare" style="padding: 6px 14px; font-size: 13px; border: none; background: var(--bg-primary); border-radius: var(--border-radius-md); font-weight: 500;">Side-by-side comparison</button>
-  <button id="view-breakeven" style="padding: 6px 14px; font-size: 13px; border: none; background: transparent; border-radius: var(--border-radius-md); color: var(--text-secondary);">Breakeven cap</button>
-</div>
-
-<div id="view-compare-panel">
+<div>
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
     <div>
       <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Dilutable stake (%)</label>
@@ -142,39 +137,12 @@
   <div style="position: relative; width: 100%; height: 320px;">
     <canvas id="compare-chart"></canvas>
   </div>
-</div>
 
-<div id="view-breakeven-panel" style="display: none;">
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-    <div>
-      <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Dilutable target (%)</label>
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <input type="range" id="be-dilutable" min="5" max="25" value="15" step="0.5" style="flex: 1;" />
-        <span id="be-dilutable-out" style="font-size: 14px; font-weight: 500; min-width: 36px; text-align: right;">15</span>
-      </div>
-    </div>
-    <div>
-      <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Protected stake (%)</label>
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <input type="range" id="be-protected" min="1" max="15" value="5" step="0.5" style="flex: 1;" />
-        <span id="be-protected-out" style="font-size: 14px; font-weight: 500; min-width: 36px; text-align: right;">5</span>
-      </div>
-    </div>
-    <div>
-      <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Dilution per round (%)</label>
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <input type="range" id="be-dilution" min="10" max="30" value="20" step="1" style="flex: 1;" />
-        <span id="be-dilution-out" style="font-size: 14px; font-weight: 500; min-width: 36px; text-align: right;">20</span>
-      </div>
-    </div>
-  </div>
-
-  <div style="background: var(--bg-secondary); border-radius: var(--border-radius-md); padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
-    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 6px;">Required protection cap to match dilutable target at a €500M exit</div>
+  <div style="background: var(--bg-secondary); border-radius: var(--border-radius-md); padding: 1rem 1.25rem; margin-top: 1.5rem;">
+    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 6px;">Required protection cap to match the dilutable stake at a €500M exit</div>
     <div style="font-size: 24px; font-weight: 500;" id="be-result">—</div>
     <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;" id="be-ratio">—</div>
   </div>
-
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -231,12 +199,6 @@
     outputs[id] = document.getElementById(id + '-out');
   });
 
-  var beControls = ['be-dilutable', 'be-protected', 'be-dilution'];
-  var beOutputs = {};
-  beControls.forEach(function(id) {
-    beOutputs[id] = document.getElementById(id + '-out');
-  });
-
   var compareChart;
 
   function updateCompare() {
@@ -264,58 +226,22 @@
       compareChart.data.datasets[1].data = data.protSeries.map(function(y, i) { return { x: data.exits[i], y: y }; });
       compareChart.update('none');
     }
-  }
-
-  function updateBreakeven() {
-    var d = parseFloat(document.getElementById('be-dilutable').value);
-    var p = parseFloat(document.getElementById('be-protected').value);
-    var di = parseFloat(document.getElementById('be-dilution').value);
-    beOutputs['be-dilutable'].textContent = d;
-    beOutputs['be-protected'].textContent = p;
-    beOutputs['be-dilution'].textContent = di;
 
     var capAt500 = findBreakevenCap(d, p, di, 500);
     var resultEl = document.getElementById('be-result');
     var ratioEl = document.getElementById('be-ratio');
     if (capAt500 === null || capAt500 > 9000) {
       resultEl.textContent = 'No cap is sufficient';
-      ratioEl.textContent = p + '% cannot match ' + d + '% at this exit size under any realistic protection cap';
+      ratioEl.textContent = p + '% cannot match ' + d + '% at a €500M exit under any realistic protection cap';
     } else {
       resultEl.textContent = '€' + capAt500.toLocaleString() + 'M';
       var ratio = (capAt500 / 10);
       ratioEl.textContent = 'That is ' + Math.round(ratio) + 'x larger than the €10M cap commonly cited as the ceiling on US-style protection (real US deals: €2–15M typical, €20M at the extreme).';
     }
-
   }
 
   controls.forEach(function(id) {
     document.getElementById(id).addEventListener('input', updateCompare);
-  });
-  beControls.forEach(function(id) {
-    document.getElementById(id).addEventListener('input', updateBreakeven);
-  });
-
-  var btnCompare = document.getElementById('view-compare');
-  var btnBreakeven = document.getElementById('view-breakeven');
-  var panelCompare = document.getElementById('view-compare-panel');
-  var panelBreakeven = document.getElementById('view-breakeven-panel');
-
-  btnCompare.addEventListener('click', function() {
-    panelCompare.style.display = 'block';
-    panelBreakeven.style.display = 'none';
-    btnCompare.style.background = 'var(--bg-primary)';
-    btnCompare.style.color = 'var(--text-primary)';
-    btnBreakeven.style.background = 'transparent';
-    btnBreakeven.style.color = 'var(--text-secondary)';
-  });
-  btnBreakeven.addEventListener('click', function() {
-    panelCompare.style.display = 'none';
-    panelBreakeven.style.display = 'block';
-    btnBreakeven.style.background = 'var(--bg-primary)';
-    btnBreakeven.style.color = 'var(--text-primary)';
-    btnCompare.style.background = 'transparent';
-    btnCompare.style.color = 'var(--text-secondary)';
-    updateBreakeven();
   });
 
   function initCompare() {
