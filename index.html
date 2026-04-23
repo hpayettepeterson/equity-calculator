@@ -130,8 +130,8 @@
   </div>
 
   <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 8px; font-size: 12px; color: var(--text-secondary);">
-    <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 3px; background: #378ADD;"></span>Dilutable stake (e.g. 15%)</span>
-    <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 3px; background: #D85A30; border-top: 1px dashed #D85A30;"></span>Protected stake (e.g. 5% up to €10M cap)</span>
+    <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 3px; background: #378ADD;"></span><span id="legend-dilutable">Dilutable stake</span></span>
+    <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 3px; background: #D85A30; border-top: 1px dashed #D85A30;"></span><span id="legend-protected">Protected stake</span></span>
   </div>
 
   <div style="position: relative; width: 100%; height: 320px;">
@@ -214,6 +214,9 @@
     outputs['protected'].textContent = p;
     outputs['cap'].textContent = c;
     outputs['dilution'].textContent = di;
+
+    document.getElementById('legend-dilutable').textContent = 'Dilutable stake (' + d + '%)';
+    document.getElementById('legend-protected').textContent = 'Protected stake (' + p + '% up to €' + c + 'M cap)';
 
     var data = buildData(d, p, c, di);
 
