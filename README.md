@@ -19,7 +19,7 @@ framework for Berlin-Brandenburg university and research institution spinouts).
 
 Single-file HTML with Chart.js loaded from CDN. No build step.
 
-Two views:
+It includes: 
 
 1. **Side-by-side comparison** — plots effective final stake for
    dilutable vs protected structures across exit valuations.
