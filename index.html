@@ -123,9 +123,9 @@
       <div style="font-size: 13px; color: var(--text-secondary);">Protected: <span id="m200-p" style="color: var(--text-primary); font-weight: 500;">—</span></div>
     </div>
     <div style="background: var(--bg-secondary); border-radius: var(--border-radius-md); padding: 14px;">
-      <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">At €1B exit</div>
-      <div style="font-size: 13px; color: var(--text-secondary);">Dilutable: <span id="m1000-d" style="color: var(--text-primary); font-weight: 500;">—</span></div>
-      <div style="font-size: 13px; color: var(--text-secondary);">Protected: <span id="m1000-p" style="color: var(--text-primary); font-weight: 500;">—</span></div>
+      <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">At €750M exit</div>
+      <div style="font-size: 13px; color: var(--text-secondary);">Dilutable: <span id="m750-d" style="color: var(--text-primary); font-weight: 500;">—</span></div>
+      <div style="font-size: 13px; color: var(--text-secondary);">Protected: <span id="m750-p" style="color: var(--text-primary); font-weight: 500;">—</span></div>
     </div>
   </div>
 
@@ -173,7 +173,7 @@
 
   function buildData(dilutable, protectedPct, cap, dilution) {
     var exits = [];
-    for (var v = 10; v <= 2000; v += 10) exits.push(v);
+    for (var v = 10; v <= 750; v += 10) exits.push(v);
     var dilSeries = exits.map(function(v) { return simulate(dilutable, null, dilution, v); });
     var protSeries = exits.map(function(v) { return simulate(protectedPct, cap, dilution, v); });
     return { exits: exits, dilSeries: dilSeries, protSeries: protSeries };
@@ -220,7 +220,7 @@
 
     var data = buildData(d, p, c, di);
 
-    var exits = [50, 200, 1000];
+    var exits = [50, 200, 750];
     exits.forEach(function(v) {
       var dVal = simulate(d, null, di, v);
       var pVal = simulate(p, c, di, v);
@@ -272,7 +272,7 @@
           x: {
             type: 'linear',
             title: { display: true, text: 'Exit valuation (€M)', font: { size: 12 } },
-            min: 10, max: 2000,
+            min: 10, max: 750,
             grid: { color: GRID },
             ticks: { callback: function(v) { return v >= 1000 ? '€' + (v / 1000) + 'B' : '€' + v + 'M'; } }
           },
